@@ -1,174 +1,62 @@
 # CyberGuard
 
-CyberGuard is a command-line security log analyzer written in Python.
 
-The program analyzes authentication logs, counts successful and failed login attempts, identifies IP addresses with multiple failed login attempts, and assigns a simple severity level to potentially suspicious activity.
+#### Description:
 
-CyberGuard was developed as a Python programming project to demonstrate concepts such as functions, regular expressions, loops, conditionals, lists, dictionaries, modules, automated testing, and basic security log analysis.
+CyberGuard is a command-line security log analyzer written in Python. It accepts authentication events entered by the user, validates each line, counts successful and failed login attempts, identifies IP addresses with repeated failed logins, assigns a simplified severity level, and prints a report. The project demonstrates text parsing, input validation, aggregation, functions, and automated testing. It is an educational exercise, not a production SIEM.
 
 ## Features
 
-CyberGuard can:
+CyberGuard supports `FAILED_LOGIN` and `SUCCESS_LOGIN` events. Each accepted record contains a date, time, username, and IPv4 address. The program rejects malformed records, unsupported event names, invalid IPv4 octets, leading-zero octets, and extra text after a valid record. Valid events are collected until the user enters `DONE`, after which a summary is printed.
 
-* Parse authentication log entries
-* Identify successful and failed login attempts
-* Count failed login attempts by IP address
-* Detect IP addresses with three or more failed login attempts
-* Assign a severity level based on the number of failed attempts
-* Generate a security report
-* Handle invalid log entries
-* Run automated tests using pytest
+Failed login attempts are grouped by source IP. An address is reported as suspicious after three or more failed attempts. Severity labels are `LOW` for zero to two failures, `MEDIUM` for three or four, and `HIGH` for five or more. These labels are simple project-specific heuristics, not proof that an account or computer has been compromised.
 
-The severity system used by CyberGuard is:
+## Input Format
 
-* `LOW`: fewer than 3 failed attempts
-* `MEDIUM`: 3 or 4 failed attempts
-* `HIGH`: 5 or more failed attempts
-
-These levels are simplified rules created for this project. A suspicious IP address is not necessarily a malicious or compromised system.
-
-## Log Format
-
-CyberGuard expects log entries in the following format:
+Enter one record per line in this format:
 
 ```text
 2026-09-19 10:15:22 FAILED_LOGIN user=admin ip=192.168.1.10
 ```
 
-The supported events are:
-
-* `FAILED_LOGIN`
-* `SUCCESS_LOGIN`
-
-Each entry contains:
-
-* Date
-* Time
-* Event type
-* Username
-* IP address
-
-The user can enter multiple log entries and type `DONE` when finished.
+The supported event names are `FAILED_LOGIN` and `SUCCESS_LOGIN`. Type `DONE` when all records have been entered. Invalid lines are rejected and excluded from the report.
 
 ## Requirements
 
-CyberGuard requires:
+The application uses Python's standard library. Python 3 is required. `pytest` is needed only for the automated tests and can be installed with `python -m pip install pytest`.
 
-* Python 3
-* pytest for running the automated tests
+## Installation and Usage
 
-The main program only uses Python's standard library. No additional packages are required to run `project.py`.
-
-## Installation
-
-Clone or download the project and enter its directory.
-
-A virtual environment can be created with:
+Clone or download the repository and enter the `CyberGuard` directory. A virtual environment is recommended:
 
 ```bash
 python -m venv .venv
-```
-
-Activate it on Linux:
-
-```bash
 source .venv/bin/activate
-```
-
-Install pytest:
-
-```bash
-python -m pip install pytest
-```
-
-## Running CyberGuard
-
-Run the program with:
-
-```bash
+python -m pip install -r requirements.txt
 python project.py
 ```
 
-Enter security logs one per line.
-
-Example:
-
-```text
-2026-09-19 10:15:22 FAILED_LOGIN user=admin ip=192.168.1.10
-2026-09-19 10:16:01 FAILED_LOGIN user=admin ip=192.168.1.10
-2026-09-19 10:16:43 FAILED_LOGIN user=admin ip=192.168.1.10
-2026-09-19 10:17:10 SUCCESS_LOGIN user=huendell ip=192.168.1.20
-DONE
-```
-
-CyberGuard produces a report similar to:
-
-```text
-===== CYBERGUARD SECURITY REPORT =====
-Total events: 4
-Successful logins: 1
-Failed logins: 3
-
-Suspicious IP addresses:
-- 192.168.1.10: 3 failed attempts [MEDIUM]
-=======================================
-```
-
-## Running the Tests
-
-The project includes automated tests in `test_project.py`.
-
-Run them with:
+Run the automated tests with:
 
 ```bash
 pytest
 ```
 
-The test suite verifies:
+## Project Files
 
-* Valid log parsing
-* Invalid log handling
-* Unsupported event handling
-* Failed login counting
-* Brute-force detection
-* Detection thresholds
-* Severity classification
-* Security report generation
+- `project.py` contains the command-line interface, parsing, IPv4 validation, counting, brute-force threshold, severity classification, and report generation.
+- `test_project.py` tests valid and invalid input, unsupported events, IP validation, trailing text, failure counts, threshold detection, severity levels, and report output.
+- `requirements.txt` lists the test dependency.
+- `DESIGN.md` explains the architecture, validation rules, design decisions, and limitations.
+- `.gitignore` excludes local Python caches and virtual-environment artifacts from version control.
 
-## Project Structure
+## Design Choices
 
-```text
-cyberguard/
-├── .gitignore
-├── project.py
-├── test_project.py
-├── README.md
-└── DESIGN.md
-```
+Parsing and analysis are split into functions so each behavior can be tested without interactive input. `parse_log()` uses a full-line regular expression, then validates the numeric range of each IPv4 octet. `count_failed_logins()` aggregates only failed events, while `detect_brute_force()` applies a configurable threshold. `get_severity()` keeps classification independent from report formatting. `generate_report()` returns a string instead of printing directly, making its output straightforward to assert in tests.
 
-### `project.py`
-
-Contains the main program and the functions responsible for parsing logs, analyzing failed login attempts, detecting suspicious activity, assigning severity levels, and generating the final report.
-
-### `test_project.py`
-
-Contains the automated tests for the functions implemented in `project.py`.
-
-### `DESIGN.md`
-
-Describes the technical design of CyberGuard and explains the main implementation decisions.
+The accepted input format is intentionally narrow so validation is predictable and ambiguous lines are rejected. This also makes the program easier to extend with additional event types or reporting rules in a future version.
 
 ## Limitations
 
-CyberGuard is an educational project and uses a simplified approach to security log analysis.
+CyberGuard analyzes only records manually supplied during a session. It does not collect system logs, monitor network traffic, block connections, persist history, query threat intelligence, or determine whether an event was actually malicious. The thresholds are simplified rules and would need tuning and supporting context before real-world use. Date and time fields are kept as strings rather than validated as real calendar values, and usernames are not checked against real accounts.
 
-It does not:
-
-* Monitor a live system
-* Collect real authentication logs automatically
-* Perform network monitoring
-* Block IP addresses
-* Confirm that an IP address belongs to an attacker
-* Replace a SIEM or other security monitoring platform
-
-The three-attempt threshold and severity levels are simple rules used to demonstrate how authentication data can be analyzed programmatically.
