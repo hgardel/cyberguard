@@ -106,10 +106,6 @@ def main():
             print("Invalid log format.")
             continue
 
-        parsed = parse_log(line)
-        if parsed is None:
-            print("Invalid log format.")
-            continue
         logs.append(parsed)
 
     if not logs:
