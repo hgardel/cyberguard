@@ -98,8 +98,13 @@ def main():
     logs = []
     while True:
         line = input("Log: ")
-        if line.upper() == "DONE":
+        if line.strip().upper() == "DONE":
             break
+
+        parsed = parse_log(line)
+        if parsed is None:
+            print("Invalid log format.")
+            continue
 
         parsed = parse_log(line)
         if parsed is None:
